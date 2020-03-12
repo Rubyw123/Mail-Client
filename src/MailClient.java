@@ -2,6 +2,7 @@ import java.io.*;
 //import java.net.*;
 import java.awt.*;
 import java.awt.event.*;
+import javax.swing.*;
 
 /* $Id: MailClient.java,v 1.7 1999/07/22 12:07:30 kangasha Exp $ */
 
@@ -19,16 +20,29 @@ public class MailClient extends Frame {
 	private Button btSend = new Button("Send");
 	private Button btClear = new Button("Clear");
 	private Button btQuit = new Button("Quit");
-	private Label serverLabel = new Label("Local mailserver:");
-	private TextField serverField = new TextField("", 40);
-	private Label fromLabel = new Label("From:");
-	private TextField fromField = new TextField("", 40);
+
+	/*
+	 * private Label serverLabel = new Label("Local mailserver:"); private TextField
+	 * serverField = new TextField("londo.ad.stetson.edu", 40);
+	 * 
+	 * 
+	 * private Label fromLabel = new Label("From:"); private TextField fromField =
+	 * new TextField("wangy@londo.ad.stetson.edu", 40);
+	 * 
+	 */
+
+	private Label cclaber = new Label("CC:");
+	private TextField ccField = new TextField("", 40);
 	private Label toLabel = new Label("To:");
 	private TextField toField = new TextField("", 40);
 	private Label subjectLabel = new Label("Subject:");
 	private TextField subjectField = new TextField("", 40);
 	private Label messageLabel = new Label("Message:");
 	private TextArea messageText = new TextArea(10, 40);
+
+	private String server = "smtp.gmail.com";
+	private String from;
+	private String password;
 
 	/**
 	 * Create a new MailClient window with fields for entering all the relevant
@@ -37,20 +51,27 @@ public class MailClient extends Frame {
 	@SuppressWarnings("deprecation")
 	public MailClient() {
 		super("Java Mailclient");
+		from = JOptionPane.showInputDialog("Please enter your email server username:");
+		password = JOptionPane.showInputDialog("Please enter your password:");
 
 		/*
-		 * Create panels for holding the fields. To make it look nice, create an
-		 * extra panel for holding all the child panels.
+		 * Create panels for holding the fields. To make it look nice, create an extra
+		 * panel for holding all the child panels.
 		 */
 		Panel serverPanel = new Panel(new BorderLayout());
 		Panel fromPanel = new Panel(new BorderLayout());
+		Panel ccPanel = new Panel(new BorderLayout());
+
 		Panel toPanel = new Panel(new BorderLayout());
 		Panel subjectPanel = new Panel(new BorderLayout());
 		Panel messagePanel = new Panel(new BorderLayout());
-		serverPanel.add(serverLabel, BorderLayout.WEST);
-		serverPanel.add(serverField, BorderLayout.CENTER);
-		fromPanel.add(fromLabel, BorderLayout.WEST);
-		fromPanel.add(fromField, BorderLayout.CENTER);
+		/*
+		 * serverPanel.add(serverLabel, BorderLayout.WEST); serverPanel.add(serverField,
+		 * BorderLayout.CENTER); fromPanel.add(fromLabel, BorderLayout.WEST);
+		 * fromPanel.add(fromField, BorderLayout.CENTER);
+		 */
+		ccPanel.add(cclaber, BorderLayout.WEST);
+		ccPanel.add(ccField, BorderLayout.CENTER);
 		toPanel.add(toLabel, BorderLayout.WEST);
 		toPanel.add(toField, BorderLayout.CENTER);
 		subjectPanel.add(subjectLabel, BorderLayout.WEST);
@@ -58,9 +79,11 @@ public class MailClient extends Frame {
 		messagePanel.add(messageLabel, BorderLayout.NORTH);
 		messagePanel.add(messageText, BorderLayout.CENTER);
 		Panel fieldPanel = new Panel(new GridLayout(0, 1));
-		fieldPanel.add(serverPanel);
-		fieldPanel.add(fromPanel);
+		/*
+		 * fieldPanel.add(serverPanel); fieldPanel.add(fromPanel);
+		 */
 		fieldPanel.add(toPanel);
+		fieldPanel.add(ccPanel);
 		fieldPanel.add(subjectPanel);
 
 		/*
@@ -92,45 +115,58 @@ public class MailClient extends Frame {
 			System.out.println("Sending mail");
 
 			/* Check that we have the local mailserver */
-			if ((serverField.getText()).equals("")) {
-				System.out.println("Need name of local mailserver!");
-				return;
-			}
+			/*
+			 * if ((serverField.getText()).equals("")) {
+			 * System.out.println("Need name of local mailserver!"); return; }
+			 * 
+			 * /* Check that we have the sender and recipient.
+			 */
+			/*
+			 * if ((fromField.getText()).equals("")) { System.out.println("Need sender!");
+			 * return; }
+			 */
 
-			/* Check that we have the sender and recipient. */
-			if ((fromField.getText()).equals("")) {
-				System.out.println("Need sender!");
-				return;
-			}
 			if ((toField.getText()).equals("")) {
 				System.out.println("Need recipient!");
 				return;
 			}
 
 			/* Create the message */
-			Message mailMessage = new Message(fromField.getText(),
-					toField.getText(), subjectField.getText(),
-					messageText.getText());
+				Message ccMessage = new Message("","","","");
+				Message mailMessage = new Message(from, toField.getText(), subjectField.getText(),
+						messageText.getText());
+				if(!ccField.getText().equals("")) {
+				ccMessage = new Message(from, ccField.getText(), subjectField.getText(), 
+						messageText.getText());
+				if(!ccMessage.isValid()) {return;};
+				}
+			
 
 			/*
-			 * Check that the message is valid, i.e., sender and recipient
-			 * addresses look ok.
+			 * Check that the message is valid, i.e., sender and recipient addresses look
+			 * ok.
 			 */
 			if (!mailMessage.isValid()) {
 				return;
 			}
+			
 
 			/*
-			 * Create the envelope, open the connection and try to send the
-			 * message.
+			 * Create the envelope, open the connection and try to send the message.
 			 */
 			try {
-				Envelope envelope = new Envelope(mailMessage,
-						serverField.getText());
+				Envelope envelope = new Envelope(mailMessage, server,password);
 
 				SMTPConnection connection = new SMTPConnection(envelope);
 				connection.send(envelope);
 				connection.close();
+				
+				if(!ccField.getText().equals("")) {
+					Envelope ccEnvelope = new Envelope(ccMessage,server,password);
+					SMTPConnection ccConnection = new SMTPConnection(ccEnvelope);
+					ccConnection.send(ccEnvelope);
+					ccConnection.close();
+				}
 			} catch (IOException error) {
 				System.out.println("Sending failed: " + error);
 				return;
@@ -143,7 +179,7 @@ public class MailClient extends Frame {
 	class ClearListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			System.out.println("Clearing fields");
-			fromField.setText("");
+			// fromField.setText("");
 			toField.setText("");
 			subjectField.setText("");
 			messageText.setText("");

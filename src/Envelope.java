@@ -22,9 +22,11 @@ public class Envelope {
 
 	/* The actual message */
 	public Message Message;
+	
+	public String Password;
 
 	/* Create the envelope. */
-	public Envelope(Message message, String localServer)
+	public Envelope(Message message, String localServer, String pw)
 			throws UnknownHostException {
 		/* Get sender and recipient. */
 		Sender = message.getFrom();
@@ -35,11 +37,13 @@ public class Envelope {
 		 * no single periods on a line. This would mess up sending the mail.
 		 */
 		Message = escapeMessage(message);
+		Password = pw;
 
 		/*
 		 * Take the name of the local mailserver and map it into an InetAddress
 		 */
 		DestHost = localServer;
+		
 		try {
 			DestAddr = InetAddress.getByName(DestHost);
 		} catch (UnknownHostException e) {

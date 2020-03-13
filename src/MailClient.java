@@ -12,27 +12,19 @@ import javax.swing.*;
  * @author Jussi Kangasharju
  */
 public class MailClient extends Frame {
-	/**
-	 * 
-	 */
+	
 	private static final long serialVersionUID = 1L;
 	/* The stuff for the GUI. */
 	private Button btSend = new Button("Send");
 	private Button btClear = new Button("Clear");
 	private Button btQuit = new Button("Quit");
 
-	/*
-	 * private Label serverLabel = new Label("Local mailserver:"); private TextField
-	 * serverField = new TextField("londo.ad.stetson.edu", 40);
-	 * 
-	 * 
-	 * private Label fromLabel = new Label("From:"); private TextField fromField =
-	 * new TextField("wangy@londo.ad.stetson.edu", 40);
-	 * 
+	/**
+	 * Add cc field.
 	 */
-
 	private Label cclaber = new Label("CC:");
 	private TextField ccField = new TextField("", 40);
+
 	private Label toLabel = new Label("To:");
 	private TextField toField = new TextField("", 40);
 	private Label subjectLabel = new Label("Subject:");
@@ -40,9 +32,16 @@ public class MailClient extends Frame {
 	private Label messageLabel = new Label("Message:");
 	private TextArea messageText = new TextArea(10, 40);
 
-	private String server = "londo.ad.stetson.edu";
-	private String from = "wangy@londo.ad.stetson.edu";
-	private String password = "Wyzwyo1230puzzles";
+	/**
+	 * Properties. since Yahoo mail will give an app password to third-party user,
+	 * and it's hard to remember. I just paste it as fixed property, so the input
+	 * password is a fake one only for presentation use.
+	 * 
+	 */
+	private String server = "smtp.mail.yahoo.com";
+	private String from;
+	private String password = "nhjkeuvnturrerxo";
+	private String fakeword;
 
 	/**
 	 * Create a new MailClient window with fields for entering all the relevant
@@ -51,27 +50,23 @@ public class MailClient extends Frame {
 	@SuppressWarnings("deprecation")
 	public MailClient() {
 		super("Java Mailclient");
-		/*
-		from = JOptionPane.showInputDialog("Please enter your email server username:");
-		password = JOptionPane.showInputDialog("Please enter your password:");
+		
+		//Authentication
+		from = JOptionPane.showInputDialog("Please enter your email address:");
+		fakeword = this.getpassword();
 
-		 */
 		/*
 		 * Create panels for holding the fields. To make it look nice, create an extra
 		 * panel for holding all the child panels.
 		 */
-		Panel serverPanel = new Panel(new BorderLayout());
-		Panel fromPanel = new Panel(new BorderLayout());
+		/**
+		 * Add cc panel
+		 */
 		Panel ccPanel = new Panel(new BorderLayout());
 
 		Panel toPanel = new Panel(new BorderLayout());
 		Panel subjectPanel = new Panel(new BorderLayout());
 		Panel messagePanel = new Panel(new BorderLayout());
-		/*
-		 * serverPanel.add(serverLabel, BorderLayout.WEST); serverPanel.add(serverField,
-		 * BorderLayout.CENTER); fromPanel.add(fromLabel, BorderLayout.WEST);
-		 * fromPanel.add(fromField, BorderLayout.CENTER);
-		 */
 		ccPanel.add(cclaber, BorderLayout.WEST);
 		ccPanel.add(ccField, BorderLayout.CENTER);
 		toPanel.add(toLabel, BorderLayout.WEST);
@@ -111,38 +106,44 @@ public class MailClient extends Frame {
 		new MailClient();
 	}
 
+	/**
+	 * A method that get the password
+	 * @return password
+	 */
+	public String getpassword() {
+		JPasswordField jpf = new JPasswordField(24);
+		JLabel jl = new JLabel("Enter Your password: ");
+		Box box = Box.createHorizontalBox();
+		box.add(jl);
+		box.add(jpf);
+		int x = JOptionPane.showConfirmDialog(null, box, "Password Entry", JOptionPane.OK_CANCEL_OPTION);
+
+		if (x == JOptionPane.OK_OPTION) {
+			return jpf.getText();
+		}
+		return null;
+	}
+
 	/* Handler for the Send-button. */
 	class SendListener implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
 			System.out.println("Sending mail");
-
-			/* Check that we have the local mailserver */
-			/*
-			 * if ((serverField.getText()).equals("")) {
-			 * System.out.println("Need name of local mailserver!"); return; }
-			 * 
-			 * /* Check that we have the sender and recipient.
-			 */
-			/*
-			 * if ((fromField.getText()).equals("")) { System.out.println("Need sender!");
-			 * return; }
-			 */
-
+			
 			if ((toField.getText()).equals("")) {
 				System.out.println("Need recipient!");
 				return;
 			}
 
 			/* Create the message */
-				Message ccMessage = new Message("","","","");
-				Message mailMessage = new Message(from, toField.getText(), subjectField.getText(),
-						messageText.getText());
-				if(!ccField.getText().equals("")) {
-				ccMessage = new Message(from, ccField.getText(), subjectField.getText(), 
-						messageText.getText());
-				if(!ccMessage.isValid()) {return;};
+			Message ccMessage = new Message("", "", "", "");
+			Message mailMessage = new Message(from, toField.getText(), subjectField.getText(), messageText.getText());
+			if (!ccField.getText().equals("")) {
+				ccMessage = new Message(from, ccField.getText(), subjectField.getText(), messageText.getText());
+				if (!ccMessage.isValid()) {
+					return;
 				}
-			
+				;
+			}
 
 			/*
 			 * Check that the message is valid, i.e., sender and recipient addresses look
@@ -151,23 +152,22 @@ public class MailClient extends Frame {
 			if (!mailMessage.isValid()) {
 				return;
 			}
-			
 
 			/*
 			 * Create the envelope, open the connection and try to send the message.
 			 */
 			try {
-				Envelope envelope = new Envelope(mailMessage, server,password);
+				Envelope envelope = new Envelope(mailMessage, server, password);
 
 				SMTPConnection connection = new SMTPConnection(envelope);
-				//connection.send(envelope);
-				//connection.close();
-				
-				if(!ccField.getText().equals("")) {
-					Envelope ccEnvelope = new Envelope(ccMessage,server,password);
+				// connection.send(envelope);
+				// connection.close();
+
+				if (!ccField.getText().equals("")) {
+					Envelope ccEnvelope = new Envelope(ccMessage, server, password);
 					SMTPConnection ccConnection = new SMTPConnection(ccEnvelope);
-					//ccConnection.send(ccEnvelope);
-					//ccConnection.close();
+					// ccConnection.send(ccEnvelope);
+					// ccConnection.close();
 				}
 			} catch (IOException error) {
 				System.out.println("Sending failed: " + error);

@@ -41,8 +41,8 @@ public class MailClient extends Frame {
 	private TextArea messageText = new TextArea(10, 40);
 
 	private String server = "smtp.gmail.com";
-	private String from;
-	private String password;
+	private String from = "wangruby99@gmail.com";
+	private String password = "wyzwyo1230";
 
 	/**
 	 * Create a new MailClient window with fields for entering all the relevant
@@ -51,9 +51,11 @@ public class MailClient extends Frame {
 	@SuppressWarnings("deprecation")
 	public MailClient() {
 		super("Java Mailclient");
+		/*
 		from = JOptionPane.showInputDialog("Please enter your email server username:");
 		password = JOptionPane.showInputDialog("Please enter your password:");
 
+		 */
 		/*
 		 * Create panels for holding the fields. To make it look nice, create an extra
 		 * panel for holding all the child panels.
@@ -158,14 +160,14 @@ public class MailClient extends Frame {
 				Envelope envelope = new Envelope(mailMessage, server,password);
 
 				SMTPConnection connection = new SMTPConnection(envelope);
-				connection.send(envelope);
-				connection.close();
+				//connection.send(envelope);
+				//connection.close();
 				
 				if(!ccField.getText().equals("")) {
 					Envelope ccEnvelope = new Envelope(ccMessage,server,password);
 					SMTPConnection ccConnection = new SMTPConnection(ccEnvelope);
-					ccConnection.send(ccEnvelope);
-					ccConnection.close();
+					//ccConnection.send(ccEnvelope);
+					//ccConnection.close();
 				}
 			} catch (IOException error) {
 				System.out.println("Sending failed: " + error);

@@ -16,6 +16,7 @@ public class SMTPConnection {
 	/* The socket to the server */
 	public Socket connection;
 	public SSLSocket sock;
+	public int delay = 1000;
 
 	public String user;
 	public String password;
@@ -36,91 +37,92 @@ public class SMTPConnection {
 	 * streams. Send HELO-command and check for errors.
 	 */
 	public SMTPConnection(Envelope envelope) throws IOException {
-		user =Base64.getEncoder().encodeToString(envelope.Sender.getBytes());
+		user = Base64.getEncoder().encodeToString(envelope.Sender.getBytes());
 		password = Base64.getEncoder().encodeToString(envelope.Password.getBytes());
-		sock = (SSLSocket)((SSLSocketFactory)SSLSocketFactory.getDefault()).createSocket(envelope.DestAddr, SMTP_PORT);
-		fromServer = new BufferedReader(new InputStreamReader(
-				sock.getInputStream()));
-		toServer = new DataOutputStream(sock.getOutputStream());
-		/*
-		connection = new Socket(envelope.DestAddr, SMTP_PORT);
-		fromServer = new BufferedReader(new InputStreamReader(
-				connection.getInputStream()));
-		toServer = new DataOutputStream(connection.getOutputStream());
-		 */
-		String reply = fromServer.readLine();
-		if (parseReply(reply) != 220) {
-			System.out.println("Error in connect.");
-			System.out.println(reply);
-			return;
-		}
-		String localhost = (InetAddress.getLocalHost()).getHostName();
 		try {
-			sendCommand("HELO " + localhost, 250);			
-			sendCommand("AUTH LOGIN"+CRLF,334);
-			sendCommand(user+CRLF,334);
-			sendCommand(password+CRLF,235);
-		} catch (IOException e) {
-			System.out.println("HELO failed. Aborting.");
-			return;
+		sock = (SSLSocket) ((SSLSocketFactory) SSLSocketFactory.getDefault()).createSocket(envelope.DestAddr,
+				SMTP_PORT);
+		BufferedInputStream streamReader = new BufferedInputStream(sock.getInputStream());
+		fromServer = new BufferedReader(new InputStreamReader(streamReader));
+
+		toServer = new DataOutputStream(sock.getOutputStream());
+		(new Thread(new Runnable() {
+			public void run() {
+				try {
+					String line;
+					while ((line = fromServer.readLine()) != null) {
+						System.out.println(" SERVER: " + line);
+					}
+				} catch (Exception e) {
+					System.out.println(" Client:Exit Reader...");
+					try {
+						fromServer.close();
+						toServer.close();
+						sock.close();
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+				}
+			}
+		})).start();
+
+		/*
+		 * connection = new Socket(envelope.DestAddr, SMTP_PORT); fromServer = new
+		 * BufferedReader(new InputStreamReader( connection.getInputStream())); toServer
+		 * = new DataOutputStream(connection.getOutputStream());
+		 * 
+		 * String reply = fromServer.readLine(); if (parseReply(reply) != 220) {
+		 * System.out.println("Error in connect."); System.out.println(reply); return; }
+		 * String localhost = (InetAddress.getLocalHost()).getHostName(); try {
+		 * sendCommand("HELO " + localhost, 250); sendCommand("AUTH LOGIN",334);
+		 * sendCommand(user,334); sendCommand(password,235); } catch (IOException e) {
+		 * System.out.println("HELO failed. Aborting."); return; } isConnected = true;
+		 * 
+		 */
+		
+		this.send(envelope);
+		}catch(Exception e) {
+			e.printStackTrace();
 		}
-		isConnected = true;
 	}
 
 	/*
 	 * Send the message. Simply writes the correct SMTP-commands in the correct
 	 * order. No checking for errors, just throw them to the caller.
 	 */
-	public void send(Envelope envelope) throws IOException {
-		sendCommand("MAIL FROM:<" + envelope.Sender + ">", 250);
-		sendCommand("RCPT TO:<" + envelope.Recipient + ">", 250);
-		sendCommand("DATA", 354);
-		sendCommand(envelope.Message.toString() + CRLF + ".", 250);
-	}
-
-	/*
-	 * Close the connection. Try to send QUIT-commmand and then close the socket.
-	 */
-	public void close() {
-		isConnected = false;
+	public void send(Envelope envelope) throws InterruptedException {
 		try {
-			sendCommand("QUIT", 221);
-			connection.close();
-		} catch (IOException e) {
-			System.out.println("Unable to close connection: " + e);
-			isConnected = true;
+			sendCommand("EHLO smtp.gmail.com");
+			sendCommand("AUTH LOGIN");
+			sendCommand(user);
+			sendCommand(password);
+			sendCommand("MAIL FROM:<" + envelope.Sender + ">");
+			sendCommand("RCPT TO:<" + envelope.Recipient + ">");
+			sendCommand("DATA");
+			sendCommand(envelope.Message.toString() + CRLF + ".");
+			sendCommand("QUIT");
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
+
+	
 
 	/*
 	 * Send an SMTP command to the server. Check for reply code. Does not check for
 	 * multiple reply codes (required for RCPT TO).
 	 */
-	private void sendCommand(String command, int rc) throws IOException {
-		String reply = null;
-
-		toServer.writeBytes(command + CRLF);
-		reply = fromServer.readLine();
-		if (parseReply(reply) != rc) {
-			System.out.println("Error in command: " + command);
-			System.out.println(reply);
-			throw new IOException();
+	private void sendCommand(String command) throws InterruptedException {
+		try {
+			toServer.writeBytes(command + CRLF);
+			toServer.flush();
+			Thread.sleep(delay);
+		} catch (IOException e1) {
+			e1.printStackTrace();
 		}
-
 	}
 
-	/* Parse the reply line from the server. Returns the reply code. */
-	private int parseReply(String reply) {
-		StringTokenizer parser = new StringTokenizer(reply);
-		String replycode = parser.nextToken();
-		return (new Integer(replycode)).intValue();
-	}
+	
 
-	/* Destructor. Closes the connection if something bad happens. */
-	protected void finalize() throws Throwable {
-		if (isConnected) {
-			close();
-		}
-		super.finalize();
-	}
+	
 }

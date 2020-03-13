@@ -26,7 +26,7 @@ public class SMTPConnection {
 	public DataOutputStream toServer;
 
 	/* Just to make it look nicer */
-	private static final int SMTP_PORT = 25;
+	private static final int SMTP_PORT = 465;
 	private static final String CRLF = "\r\n";
 
 	/* Are we connected? Used in close() to determine what to do. */

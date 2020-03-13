@@ -40,9 +40,9 @@ public class MailClient extends Frame {
 	private Label messageLabel = new Label("Message:");
 	private TextArea messageText = new TextArea(10, 40);
 
-	private String server = "smtp.gmail.com";
-	private String from = "wangruby99@gmail.com";
-	private String password = "wyzwyo1230";
+	private String server = "londo.ad.stetson.edu";
+	private String from = "wangy@londo.ad.stetson.edu";
+	private String password = "Wyzwyo1230puzzles";
 
 	/**
 	 * Create a new MailClient window with fields for entering all the relevant
